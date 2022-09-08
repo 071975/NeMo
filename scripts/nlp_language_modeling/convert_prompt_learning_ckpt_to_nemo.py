@@ -39,100 +39,21 @@ except (ImportError, ModuleNotFoundError):
     HAVE_APEX = False
 
 """
-This is the script to run GPT text generation.
+This is the script to convert the p-tuning PTL checkpoint file to nemo file for evaluation. 
 
-Usage:
-    Assume the model has TP=1, PP=1 in the following use cases.
-    a. run greedy inference from a nemo file:
-        python megatron_gpt_eval.py \
-            gpt_model_file=PATH_TO_MODEL \
-            inference.greedy=True \
-            inference.add_BOS=True \
-            trainer.devices=1 \
-            trainer.num_nodes=1 \
-            tensor_model_parallel_size=1 \
-            pipeline_model_parallel_size=1 \
-            prompts=[prompt1,prompt2]
-
-    b. run greedy inference from a PTL checkpoint file:
-        python megatron_gpt_eval.py \
-            checkpoint_dir=PATH_TO_CHECKPOINT_FILE \
-            checkpoint_name=CHECKPOINT_FILE_NAME \
-            hparams_file=HPARAMS_FILE \
-            inference.greedy=True \
-            inference.add_BOS=True \
-            trainer.devices=1 \
-            trainer.num_nodes=1 \
-            tensor_model_parallel_size=1 \
-            pipeline_model_parallel_size=1 \
-            prompts=[prompt1,prompt2]
-
-    c. run top_p inference from a nemo file:
-        python megatron_gpt_eval.py \
-            gpt_model_file=PATH_TO_MODEL \
-            inference.greedy=False \
-            inference.top_k=0 \
-            inference.top_p=0.9 \
-            inference.repetition_penalty=1.2 \
-            inference.add_BOS=True \
-            trainer.devices=1 \
-            trainer.num_nodes=1 \
-            tensor_model_parallel_size=1 \
-            pipeline_model_parallel_size=1 \
-            prompts=[prompt1,prompt2]
-
-    d. If you don't need to generate tokens and need model to compute logprobs:
-         python megatron_gpt_eval.py \
-            gpt_model_file=PATH_TO_MODEL \
-            inference.compute_logprob=True \
-            trainer.devices=1 \
-            trainer.num_nodes=1 \
-            tensor_model_parallel_size=1 \
-            pipeline_model_parallel_size=1 \
-            prompts=[text to get logprob]
-
-    e. Launch the inference server
-         python megatron_gpt_eval.py \
-            gpt_model_file=PATH_TO_MODEL \
-            trainer.devices=1 \
-            trainer.num_nodes=1 \
-            tensor_model_parallel_size=1 \
-            pipeline_model_parallel_size=1 \
-            server=True
-        
-        To send a request to the server, here is one example code:
-        ```python
-        import json
-        import requests
-
-        batch_size = 8
-        port_num = 5555
-        headers = {"Content-Type": "application/json"}
-
-
-        def request_data(data):
-            resp = requests.put('http://localhost:{}/generate'.format(port_num),
-                                data=json.dumps(data),
-                                headers=headers)
-            sentences = resp.json()['sentences']
-            return sentences
-
-
-        data = {
-            "sentences": [""] * batch_size,
-            "tokens_to_generate": 300,
-            "temperature": 1.0,
-            "add_BOS": True,
-            "top_k": 0,
-            "top_p": 0.9,
-            "greedy": False,
-            "all_probs": False,
-            "repetition_penalty": 1.2,
-            "min_tokens_to_generate": 2,
-        }
-
-        sentences = request_data(data)
-        ```
+Example usage:
+    Assume the model has TP=2, PP=2 in the following use cases.
+    ```
+    python scripts/nlp_language_modeling/convert_prompt_learning_ckpt_to_nemo.py \
+                trainer.devices=4 \ 
+                trainer.num_nodes=1 \
+                trainer.precision=bf16 \
+                tensor_model_parallel_size=2 \
+                pipeline_model_parallel_size=2 \
+                checkpoint_dir=/results/ptune_squad/checkpoints \
+                checkpoint_name='megatron_gpt_prompt_tune--val_loss=3.401-step=500.ckpt' \
+                hparams_file=/results/ptune_squad/version_1/hparams.yaml
+    ```
 """
 
 
