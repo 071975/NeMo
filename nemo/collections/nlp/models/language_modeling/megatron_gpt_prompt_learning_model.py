@@ -261,7 +261,7 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
         new_task = self.new_tasks[0]
         total_virtual_tokens = self.task_templates[new_task]["total_virtual_tokens"]
 
-        encoder_type = PromptEncoderType(self.cfg.p_tuning.get("type", "tpmlp").lower())
+        encoder_type = PromptEncoderType(self.cfg.p_tuning.get("encoder_type", "tpmlp").lower())
         if encoder_type == PromptEncoderType.TPMLP:
             self.prompt_encoder = PromptEncoderMLP(
                 total_virtual_tokens=total_virtual_tokens,
