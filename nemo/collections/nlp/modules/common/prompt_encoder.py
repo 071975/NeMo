@@ -16,7 +16,6 @@ import enum
 from typing import Dict, Optional
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 
 from nemo.collections.nlp.modules.common.megatron.fused_bias_gelu import fused_bias_gelu
@@ -24,7 +23,6 @@ from nemo.collections.nlp.modules.common.megatron.utils import ApexGuardDefaults
 from nemo.core.classes import Exportable, NeuralModule
 from nemo.core.classes.common import typecheck
 from nemo.core.neural_types import ChannelType, NeuralType
-from nemo.utils import logging
 
 try:
     from apex.transformer import tensor_parallel, parallel_state

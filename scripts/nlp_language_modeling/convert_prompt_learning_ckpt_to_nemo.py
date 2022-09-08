@@ -13,12 +13,15 @@
 # limitations under the License.
 
 import os
-from nemo.collections.nlp.models.language_modeling.megatron_gpt_prompt_learning_model import MegatronGPTPromptLearningModel
+
 from omegaconf import OmegaConf
 from pytorch_lightning.trainer.trainer import Trainer
 from torch.utils.data import DataLoader, Dataset
 
 from nemo.collections.nlp.models.language_modeling.megatron_gpt_model import MegatronGPTModel
+from nemo.collections.nlp.models.language_modeling.megatron_gpt_prompt_learning_model import (
+    MegatronGPTPromptLearningModel,
+)
 from nemo.collections.nlp.modules.common.megatron.megatron_init import fake_initialize_model_parallel
 from nemo.collections.nlp.modules.common.text_generation_server import MegatronServer
 from nemo.collections.nlp.modules.common.text_generation_utils import generate
@@ -132,6 +135,7 @@ Usage:
         ```
 """
 
+
 @hydra_runner(config_path="conf", config_name="prompt_learning_ckpt_to_nemo")
 def main(cfg) -> None:
     # trainer required for restoring model parallel models
@@ -161,7 +165,9 @@ def main(cfg) -> None:
         app_state.tensor_model_parallel_size = cfg.tensor_model_parallel_size
         app_state.pipeline_model_parallel_size = cfg.pipeline_model_parallel_size
         checkpoint_path = inject_model_parallel_rank(os.path.join(cfg.checkpoint_dir, cfg.checkpoint_name))
-        model: MegatronGPTPromptLearningModel = MegatronGPTPromptLearningModel.load_from_checkpoint(checkpoint_path, hparams_file=cfg.hparams_file, trainer=trainer)
+        model: MegatronGPTPromptLearningModel = MegatronGPTPromptLearningModel.load_from_checkpoint(
+            checkpoint_path, hparams_file=cfg.hparams_file, trainer=trainer
+        )
     else:
         raise ValueError("need at least a nemo file or checkpoint dir")
 
@@ -176,6 +182,7 @@ def main(cfg) -> None:
         trainer.strategy.setup_environment()
     model = model.cuda()
     model.on_train_end()
+
 
 if __name__ == '__main__':
     main()  # noqa pylint: disable=no-value-for-parameter

@@ -15,6 +15,7 @@
 import os
 import re
 from collections import OrderedDict
+from functools import partial
 from typing import Any, List, Optional, Union
 
 import torch
@@ -27,11 +28,11 @@ from nemo.collections.nlp.data.language_modeling.megatron.gpt_prompt_learning_da
 from nemo.collections.nlp.models.language_modeling.megatron_base_model import MegatronBaseModel
 from nemo.collections.nlp.models.language_modeling.megatron_gpt_model import MegatronGPTModel
 from nemo.collections.nlp.modules.common import (
+    BIGLSTMPromptEncoder,
     PromptEncoder,
+    PromptEncoderMLP,
     PromptEncoderType,
     PromptTable,
-    BIGLSTMPromptEncoder,
-    PromptEncoderMLP,
     VirtualPromptPlaceholderToken,
     VirtualPromptSource,
     VirtualPromptStyle,
@@ -46,7 +47,6 @@ from nemo.collections.nlp.modules.common.transformer.text_generation import Leng
 from nemo.collections.nlp.parts.nlp_overrides import NLPSaveRestoreConnector
 from nemo.collections.nlp.parts.utils_funcs import get_last_rank
 from nemo.utils import logging
-from functools import partial
 
 try:
     from apex.transformer import parallel_state, tensor_parallel
@@ -379,7 +379,7 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
             ):
                 state_dict_ = state_dict[self._prompt_encoder_key]
                 if not hasattr(self, "prompt_encoder"):
-                   self.init_prompt_encoder()
+                    self.init_prompt_encoder()
                 self.prompt_encoder.load_state_dict(state_dict_, strict)
 
     def setup_optimizer_param_groups(self):
@@ -809,7 +809,9 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
 
         if for_train:
             if self.cfg.sequence_parallel:
-                collate_fn = partial(dataset.collate_fn, tp_workers=parallel_state.get_tensor_model_parallel_world_size())
+                collate_fn = partial(
+                    dataset.collate_fn, tp_workers=parallel_state.get_tensor_model_parallel_world_size()
+                )
             else:
                 collate_fn = partial(dataset.collate_fn, tp_workers=0)
         else:
