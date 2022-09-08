@@ -28,13 +28,15 @@ from nemo.collections.nlp.models.language_modeling.megatron_base_model import Me
 from nemo.collections.nlp.models.language_modeling.megatron_gpt_model import MegatronGPTModel
 from nemo.collections.nlp.modules.common import (
     PromptEncoder,
+    PromptEncoderType,
     PromptTable,
+    BIGLSTMPromptEncoder,
+    PromptEncoderMLP,
     VirtualPromptPlaceholderToken,
     VirtualPromptSource,
     VirtualPromptStyle,
 )
 from nemo.collections.nlp.modules.common.megatron.utils import average_losses_across_data_parallel_group
-from nemo.collections.nlp.modules.common.prompt_encoder import PromptEncoderMLP, PromptEncoderType
 from nemo.collections.nlp.modules.common.text_generation_utils import (
     get_default_length_params,
     get_default_sampling_params,
@@ -267,14 +269,23 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 output_size=self.hidden_size,
                 init_std=self.cfg.p_tuning.init_std,
             ).to(dtype=self.autocast_dtype)
-        elif encoder_type == PromptEncoderType.LSTM:
-            self.prompt_encoder = PromptEncoder(
+        elif encoder_type == PromptEncoderType.BIGLSTM:
+            self.prompt_encoder = BIGLSTMPromptEncoder(
                 total_virtual_tokens=total_virtual_tokens,
                 hidden_size=self.cfg.p_tuning.encoder_hidden,
                 output_size=self.hidden_size,
                 lstm_dropout=self.cfg.p_tuning.dropout,
                 num_layers=self.cfg.p_tuning.num_layers,
             ).to(dtype=self.autocast_dtype)
+        elif encoder_type == PromptEncoderType.LSTM or encoder_type == PromptEncoderType.MLP:
+            self.prompt_encoder = PromptEncoder(
+                encoder_type=encoder_type,
+                total_virtual_tokens=total_virtual_tokens,
+                token_dim=self.hidden_size,
+                hidden_size=self.cfg.p_tuning.get("encoder_hidden", self.hidden_size // 2),
+                lstm_dropout=self.cfg.p_tuning.get("dropout", 0.0),
+                num_layers=self.cfg.p_tuning.get("num_layers", 2),
+            )
         else:
             raise ValueError('not supported')
 
