@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from calendar import c
 import os
 import re
 from collections import OrderedDict
@@ -125,7 +126,7 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 trainer=trainer,
                 save_restore_connector=save_resotre_connector,
                 override_config_path=frozen_model_cfg,
-            ).to(dtype=self.autocast_dtype)
+            )
 
         # TODO: Enable amp_o2 training
         self.megatron_amp_o2 = False
@@ -268,7 +269,7 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 hidden_size=self.cfg.p_tuning.encoder_hidden,
                 output_size=self.hidden_size,
                 init_std=self.cfg.p_tuning.init_std,
-            ).to(dtype=self.autocast_dtype)
+            )
         elif encoder_type == PromptEncoderType.BIGLSTM:
             self.prompt_encoder = BIGLSTMPromptEncoder(
                 total_virtual_tokens=total_virtual_tokens,
@@ -276,7 +277,7 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 output_size=self.hidden_size,
                 lstm_dropout=self.cfg.p_tuning.dropout,
                 num_layers=self.cfg.p_tuning.num_layers,
-            ).to(dtype=self.autocast_dtype)
+            )
         elif encoder_type == PromptEncoderType.LSTM or encoder_type == PromptEncoderType.MLP:
             self.prompt_encoder = PromptEncoder(
                 encoder_type=encoder_type,
@@ -730,6 +731,8 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 shuffle=True,
                 num_workers=self.cfg.data.num_workers,
                 pin_memory=True,
+                cache_data_path=self.cfg.data.get('train_cache_data_path', None),
+                load_cache=self.cfg.data.get('load_cache', False),
             )
 
     def setup_validation_data(self, validation_data_config=None):
@@ -746,6 +749,8 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 shuffle=False,
                 num_workers=self.cfg.data.num_workers,
                 pin_memory=True,
+                cache_data_path=self.cfg.data.get('validation_cache_data_path', None),
+                load_cache=self.cfg.data.get('load_cache', False),
             )
 
     def setup_test_data(self, test_data_config=None):
@@ -762,6 +767,8 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
                 shuffle=False,
                 num_workers=self.cfg.data.num_workers,
                 pin_memory=True,
+                cache_data_path=self.cfg.data.get('test_cache_data_path', None),
+                load_cache=self.cfg.data.get('load_cache', False),
             )
 
     def build_virtual_prompt_dataset(
@@ -779,6 +786,8 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
         pin_memory=False,
         tokens_to_generate=None,
         get_dataset_only=False,
+        cache_data_path=None,
+        load_cache=False,
     ):
         dataset = GPTPromptLearningDataset(
             data=data,
@@ -793,6 +802,8 @@ class MegatronGPTPromptLearningModel(MegatronBaseModel, TextGeneration):
             add_eos=add_eos,
             for_train=for_train,
             tokens_to_generate=tokens_to_generate,
+            cache_data_path=cache_data_path,
+            load_cache=load_cache,
         )
 
         if get_dataset_only:
