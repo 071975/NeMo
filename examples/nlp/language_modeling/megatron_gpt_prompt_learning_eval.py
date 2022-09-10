@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import torch
 from omegaconf import OmegaConf
 from omegaconf.omegaconf import open_dict
@@ -84,14 +86,14 @@ def main(cfg) -> None:
     # Load prompt tuned model, virtual_prompt_model_file must be provided in config
     # Update frozen GPT model path in case it has changed
     prompt_learning_cfg = MegatronGPTPromptLearningModel.restore_from(
-        cfg.virtual_prompt_model_file, trainer=trainer, return_config=True
+        cfg.virtual_prompt_model_file, trainer=trainer, return_config=True,
     )
     with open_dict(prompt_learning_cfg):
         prompt_learning_cfg.language_model_path = cfg.gpt_model_file
 
     # Now load prompt learning model with frozen gpt model base
     model = MegatronGPTPromptLearningModel.restore_from(
-        restore_path=cfg.virtual_prompt_model_file, trainer=trainer, override_config_path=prompt_learning_cfg
+        restore_path=cfg.virtual_prompt_model_file, trainer=trainer, override_config_path=prompt_learning_cfg,
     )
 
     model.freeze()
